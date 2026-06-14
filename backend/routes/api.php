@@ -1,4 +1,5 @@
 <?php
+
     $routes = [
         ["POST", "/api/auth/register", "AuthController", "register"], // kayıt ol
         ["POST", "/api/auth/login", "AuthController", "login"], // giriş yap
@@ -18,3 +19,5 @@
 
         ["POST", "/api/matches/{matchId}/players/{playerId}", "RatingController", "rate"], // ilgili maçın ilgili oyuncusunu rate'le
     ];
+
+    return $routes;

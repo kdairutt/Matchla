@@ -1,4 +1,6 @@
 <?php
+    namespace Matchla;
+
     class Router
     {
         private array $routes = [];
@@ -14,7 +16,11 @@
                 [$routeMethod, $routeUri, $controller, $action] = $route;
 
                 if($method === $routeMethod && $uri === $routeUri) {
-                    
+                    $controllerClass = "Matchla\\Controllers\\" . $controller;
+                    $instance = new $controllerClass();
+
+                    $instance->$action();
+                    return;
                 }
             }
         }
