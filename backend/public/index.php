@@ -4,5 +4,3 @@
 
     //hangi uri?
     $uri = $_SERVER["REQUEST_URI"];
-
-    var_dump($method, $uri);
