@@ -1,0 +1,15 @@
+{
+    "name": "kadirinmac/backend",
+    "autoload": {
+        "psr-4": {
+            "Matchla\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "kdairutt",
+            "email": "kaipek914@gmail.com"
+        }
+    ],
+    "require": {}
+}
