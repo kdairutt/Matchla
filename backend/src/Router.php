@@ -16,6 +16,7 @@
                 [$routeMethod, $routeUri, $controller, $action] = $route;
 
                 if($method === $routeMethod && $uri === $routeUri) {
+                    // statik route'lar için
                     $controllerClass = "Matchla\\Controllers\\" . $controller;
                     $instance = new $controllerClass();
 
