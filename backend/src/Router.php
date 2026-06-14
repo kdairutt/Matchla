@@ -15,14 +15,24 @@
             foreach($this->routes as $route) {
                 [$routeMethod, $routeUri, $controller, $action] = $route;
 
-                if($method === $routeMethod && $uri === $routeUri) {
-                    // statik route'lar için
+                if($method !== $routeMethod) continue;
+
+                $pattern = preg_replace("/\{[^}]+\}/", "([^/]+)", $routeUri);
+                $pattern = "#^" . $pattern . "$#";
+
+                if(preg_match($pattern, $uri, $matches)) {
                     $controllerClass = "Matchla\\Controllers\\" . $controller;
                     $instance = new $controllerClass();
 
-                    $instance->$action();
+                    array_shift($matches);
+                    $instance->$action(...$matches);
                     return;
                 }
             }
+
+            http_response_code(404);
+            echo json_encode([
+                "error" => "page not found"
+            ]);
         }
     }
