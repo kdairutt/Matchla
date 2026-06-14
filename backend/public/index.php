@@ -1,7 +1,7 @@
 <?php
     use Matchla\Router;
     
-    require "..vendor/autoload.php";
+    require "../vendor/autoload.php";
 
     $routes = require "../routes/api.php";
 
