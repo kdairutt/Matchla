@@ -2,7 +2,8 @@
     "name": "kadirinmac/backend",
     "autoload": {
         "psr-4": {
-            "Matchla\\": "src/"
+            "Matchla\\": "src/",
+            "Matchla\\Config\\": "config/"
         }
     },
     "authors": [
@@ -11,5 +12,7 @@
             "email": "kaipek914@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
 }
