@@ -11,13 +11,13 @@
         public static function getInstance(): static {
             if(static::$instance === null) {
                 $dsn = "mysql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_NAME']};charset=utf8";
-                $pdo = new PDO(
+                $pdo = new \PDO(
                     $dsn,
                     $_ENV["DB_USERNAME"],
                     $_ENV["DB_PASSWORD"],
                     [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
                     ]
                 );
 

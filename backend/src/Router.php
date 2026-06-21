@@ -1,17 +1,14 @@
 <?php
     namespace Matchla;
 
-    class Router
-    {
+    class Router {
         private array $routes = [];
 
-        public function load(array $routes): void
-        {
+        public function load(array $routes): void {
             $this->routes = $routes;
         }
 
-        public function dispatch(string $method, string $uri): void 
-        {
+        public function dispatch(string $method, string $uri): void {
             foreach($this->routes as $route) {
                 [$routeMethod, $routeUri, $controller, $action] = $route;
 
