@@ -5,6 +5,7 @@
 
     class AuthController {
 
+        // register için helper metotlar
         private function isEmailUnique(string $email): bool {
 
             $pdo = Database::getInstance()->getPDO();
@@ -16,7 +17,6 @@
 
             return true;
         }
-
         private function validate(array $data): ?string {
             
             if(empty($data["email"])) return "email required";
