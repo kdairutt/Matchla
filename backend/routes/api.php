@@ -7,7 +7,7 @@
             "/api/auth/register", 
             "AuthController", 
             "register", 
-            ["rateLimitMiddleware"]
+            ["RateLimitMiddleware"]
         ],
 
         // giriş yap
@@ -16,7 +16,7 @@
             "/api/auth/login", 
             "AuthController", 
             "login", 
-            ["rateLimitMiddleware"]
+            ["RateLimitMiddleware"]
         ], 
 
         // yakın çevredeki tüm maçlar
@@ -25,7 +25,7 @@
             "/api/matches", 
             "MatchController", 
             "index", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ],
 
         // spesifik bir maç
@@ -34,7 +34,7 @@
             "/api/matches/{id}", 
             "MatchController", 
             "show", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ],
 
         // maç oluştur
@@ -43,7 +43,7 @@
             "/api/matches", 
             "MatchController", 
             "create", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
         // maçı güncelle
@@ -52,7 +52,7 @@
             "/api/matches/{id}", 
             "MatchController", 
             "update", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
 
         // maçı sil
@@ -61,7 +61,7 @@
             "/api/matches/{id}", 
             "MatchController", 
             "delete", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
         // spesifik bir oyuncuyu görüntüle
@@ -70,7 +70,7 @@
             "/api/players/{id}", 
             "PlayerController", 
             "show", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
         // maçın adaylarını görüntüle
@@ -79,7 +79,7 @@
             "/api/matches/{id}/candidates",
             "CandidateController", 
             "index", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ],
 
         // maça başvur
@@ -88,7 +88,7 @@
             "/api/matches/{id}/apply", 
             "CandidateController", 
             "apply", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
         // ilgili maçın adayını reddet/kabul et
@@ -97,7 +97,7 @@
             "/api/matches/{matchId}/candidates/{candidateId}", 
             "CandidateController", 
             "decide", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
 
         // ilgili maçın ilgili oyuncusunu rate'le
@@ -106,7 +106,7 @@
             "/api/matches/{matchId}/players/{playerId}", 
             "RatingController", 
             "rate", 
-            ["authMiddleware", "rateLimitMiddleware"]
+            ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
     ];
 

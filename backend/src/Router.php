@@ -21,7 +21,7 @@
 
                     foreach($middlewares as $middleware) {
                         $middlewareClass = "Matchla\\Middleware\\" . $middleware;
-                        $middlewareInstance = new middleWareClass();
+                        $middlewareInstance = new $middlewareClass();
 
                         if (!$middlewareInstance->handle()) {
                             return;
