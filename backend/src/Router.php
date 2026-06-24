@@ -10,7 +10,7 @@
 
         public function dispatch(string $method, string $uri): void {
             foreach($this->routes as $route) {
-                [$routeMethod, $routeUri, $controller, $action] = $route;
+                [$routeMethod, $routeUri, $controller, $action, $middlewares] = $route;
 
                 if($method !== $routeMethod) continue;
 
@@ -18,6 +18,16 @@
                 $pattern = "#^" . $pattern . "$#";
 
                 if(preg_match($pattern, $uri, $matches)) {
+
+                    foreach($middlewares as $middleware) {
+                        $middlewareClass = "Matchla\\Middleware\\" . $middleware;
+                        $middlewareInstance = new middleWareClass();
+
+                        if (!$middlewareInstance->handle()) {
+                            return;
+                        }
+                    }
+
                     $controllerClass = "Matchla\\Controllers\\" . $controller;
                     $instance = new $controllerClass();
 
