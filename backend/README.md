@@ -4,7 +4,7 @@ Matchla, spor yapmak isteyen bireylerin ekip bulma, güvenilir partner bulma ve 
 
 ## Teknoloji
 
-- **PHP 8.5** — aw PHP
+- **PHP 8.5** — raw PHP
 - **MySQL** — 
 - **Composer** — autoload yönetimi
 
