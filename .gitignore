@@ -1,3 +1,5 @@
 # environmental issues.
 .env
 vendor/
+
+dump.rdb
