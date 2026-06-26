@@ -2,6 +2,7 @@
     namespace Matchla\Controllers;
 
     use Matchla\Config\Database;
+    use Matchla\Services\MatchService;
 
     class MatchController {
         private \PDO $pdo;
@@ -22,7 +23,26 @@
         }
 
         public function index(): void {
+            $userId = $_REQUEST["auth_user"]->id;
 
+            $lat = $this->isInputEmpty($_GET["lat"] ?? null, "lat");
+            $lng = $this->isInputEmpty($_GET["lng"] ?? null, "lng");
+            
+            $stmt = $this->pdo->prepare("SELECT is_premium FROM players 
+            WHERE id = ?");
+
+            $stmt->execute([$userId]);
+            
+            $premium = (bool) $stmt->fetchColumn();
+
+            $service = new MatchService();
+
+            $matches = $service->getNearbyMatches($lat, $lng, $premium);
+
+            http_response_code(200);
+            echo json_encode([
+                "matches" => $matches
+            ]);
         }
 
         public function show(string $id): void {}
