@@ -45,7 +45,24 @@
             ]);
         }
 
-        public function show(string $id): void {}
+        public function show(string $matchId): void {
+            $stmt = $this->pdo->prepare("SELECT * FROM matches WHERE id = ?");
+            $stmt->execute([$matchId]);
+
+            $match = $stmt->fetch();
+
+            if(!$match) {
+                http_response_code(404);
+                echo json_encode([
+                    "error" => "match not found"
+                ]);
+
+                return;
+            }
+            
+            http_response_code(200);
+            echo json_encode($match);
+        }
 
         public function create(): void {
             $authUser = $_REQUEST["auth_user"];
@@ -107,7 +124,7 @@
             }
         }
 
-        public function update(string $id): void {}
+        public function update(string $matchId): void {}
 
-        public function delete(string $id): void {}
+        public function delete(string $matchId): void {}
     }
