@@ -66,10 +66,9 @@
 
         public function create(): void {
             $authUser = $_REQUEST["auth_user"];
+            $matchmakerId = $authUser->id;
 
             $data = json_decode(file_get_contents("php://input"), true);
-
-            $matchmakerId = $authUser->id;
 
             $sportsTypeId = $this->isInputEmpty($data["sports_type_id"] ?? null, "sports_type_id");
             $fieldId = $this->isInputEmpty($data["field_id"] ?? null, "field_id");
@@ -124,7 +123,57 @@
             }
         }
 
-        public function update(string $matchId): void {}
+        public function update(string $matchId): void {
+            
+        }
 
-        public function delete(string $matchId): void {}
+        public function delete(string $matchId): void {
+            $authUserId = $_REQUEST["auth_user"]->id;
+
+            try {
+                $stmt = $this->pdo->prepare("SELECT matchmaker_id, match_status FROM matches WHERE id = ?");
+                $stmt->execute([$matchId]);
+                
+                $match = $stmt->fetch();
+
+                if(!$match) {
+                    http_response_code(404);
+                    echo json_encode(["error" => "match not found"]);
+                    return;
+                }
+            
+                $matchmakerId = $match["matchmaker_id"];
+                $matchStatus = $match["match_status"];
+
+                if($matchStatus === "cancelled") {
+                    http_response_code(400);
+                    echo json_encode(["error" => "match already cancelled"]);
+
+                    return;
+                }
+
+                if(!($authUserId === $matchmakerId)) {
+                    http_response_code(403);
+                    echo json_encode(["error" => "forbidden"]);
+
+                    return;
+                }
+
+                $stmt = $this->pdo->prepare("UPDATE matches SET match_status = 'cancelled' WHERE id = ?");
+                $stmt->execute([$matchId]);
+
+                http_response_code(200);
+                echo json_encode([
+                    "message" => "match deleted successfully",
+                    "matchmaker_id" => $matchmakerId
+                ]);
+
+            } catch(\PDOException $e) {
+                error_log($e->getMessage());
+                http_response_code(500);
+                echo json_encode(["error" => "server error"]);
+
+                return;
+            }
+        }
     }
