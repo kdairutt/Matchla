@@ -18,6 +18,8 @@
 
             try {
                 $decoded = JWT::decode($token, new Key($_ENV["JWT_SECRET"], "HS256"));
+                
+                $_REQUEST["auth_user"] = $decoded;
                 return true;
 
             } catch(\Exception $e) {
