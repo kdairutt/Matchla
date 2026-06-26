@@ -97,8 +97,8 @@ Uygulama katmanlı bir mimari üzerine kurulmuştur:
 ## Özellikler (Geliştirme Aşamasında)
 
 - [x] Router (statik + dinamik route desteği)
-- [ ] Authentication (JWT)
-- [ ] Oyuncu profili
+- [x] Authentication (JWT)
+- [x] Oyuncu profili
 - [ ] Maç yönetimi ve yaşam döngüsü
 - [ ] Aday/Katılımcı sistemi
 - [ ] Puanlama algoritması
