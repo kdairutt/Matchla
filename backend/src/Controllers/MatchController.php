@@ -4,6 +4,12 @@
     use Matchla\Config\Database;
 
     class MatchController {
+        private \PDO $pdo;
+
+        public function __construct() {
+            $this->pdo = Database::getInstance()->getPDO();
+        }
+
         private function isInputEmpty(mixed $input, string $fieldName): mixed {
             if(!empty($input)) return $input;
 
@@ -22,8 +28,6 @@
         public function show(string $id): void {}
 
         public function create(): void {
-            $pdo = Database::getInstance()->getPDO();
-
             $authUser = $_REQUEST["auth_user"];
 
             $data = json_decode(file_get_contents("php://input"), true);
@@ -36,7 +40,7 @@
             $targetParticipant = $this->isInputEmpty($data["target_participant"] ?? null, "target_participant");
 
             try {
-                $stmt = $pdo->prepare("INSERT INTO matches 
+                $stmt = $this->pdo->prepare("INSERT INTO matches 
                 (matchmaker_id, sports_type_id, field_id, started_at,
                 ended_at, target_participant, min_player_point,
                 max_player_point, only_licensed_allowed, description)
@@ -66,7 +70,7 @@
                 echo json_encode([
                     "message" => "match created successfully",
                     "match" => [
-                        "id" => $pdo->lastInsertId(),
+                        "id" => $this->pdo->lastInsertId(),
                         "matchmaker_id" => $matchmakerId,
                         "sports_type_id" => $sportsTypeId,
                         "field_id" => $fieldId,
@@ -76,7 +80,7 @@
                 ]);
                 return;
                 
-            } catch(PDOException $e) {
+            } catch(\PDOException $e) {
                 error_log($e->getMessage());
                 echo json_encode(["error" => "server error"]);
                 return;
