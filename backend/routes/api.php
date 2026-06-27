@@ -75,7 +75,7 @@
         
         [
             "PATCH",
-            "/api/players{id}",
+            "/api/players/{id}",
             "PlayerController",
             "update",
             ["AuthMiddleware", "RateLimitMiddleware"]
