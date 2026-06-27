@@ -73,6 +73,14 @@
             ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
+        [
+            "PATCH",
+            "/api/players{id}",
+            "PlayerController",
+            "update",
+            ["AuthMiddleware", "RateLimitMiddleware"]
+        ],
+
         // maçın adaylarını görüntüle
         [
             "GET",
