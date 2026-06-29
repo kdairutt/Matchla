@@ -10,46 +10,90 @@
             $this->pdo = Database::getInstance()->getPDO();
         }
 
-        public function apply(string $matchId): void {
-            $authUser = $_REQUEST["auth_user"];
-            $authUserId = $authUser->id;
+        private function getData(string $candidateId, string $matchId): array {
 
-            $data = json_decode(file_get_contents("php://input"), true);
-            $applicationNote = $data["application_note"] ?? null;
+            $data = [];
 
-            // maç var mı?
             try {
-                $stmt = $this->pdo->prepare("SELECT id
+                // zaman çakışmasının kontrolü için gereken, kullanıcının kabul aldığı tüm maçların
+                // kontrolünü yapmaya yarayacak sorgu
+                
+                $stmt = $this->pdo->prepare("SELECT
+                m.started_at AS accepted_started_at, m.ended_at AS accepted_ended_at
+                FROM candidates c
+                JOIN matches m ON m.id = c.match_id AND m.match_status = 'open'
+                WHERE c.player_id = ? c.status = 'accepted'");
+
+                $stmt->execute([$candidateId]);
+
+                $data[] = $stmt->fetchAll();
+
+                // sadece başvurulan maçı getiren sorgu
+                $stmt = $this->pdo->prepare("SELECT started_at AS applied_started_at, ended_at AS applied_ended_at,
+                only_licensed_allowed, min_player_point, max_player_point 
                 FROM matches WHERE id = ?");
                 $stmt->execute([$matchId]);
+
+                $data[] = $stmt->fetch();
+
+                // başvuran player bilgilerini getiren sorgu
+                $stmt = $this->pdo->prepare("SELECT loyalty_point, general_skill_point, licensed FROM players
+                WHERE id = ?");
+                $stmt->execute([$candidateId]);
+
+                $data[] = $stmt->fetch();
                 
-                if(empty($stmt->fetchColumn())) {
-                    http_response_code(404);
-                    echo json_encode(["error" => "match not found"]);
-                    return;
-                }
+                return $data;
 
             } catch(\PDOException $e) {
                 error_log($e->getMessage());
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
+                return [];
+            }
+
+            // Oyuncunun güncel olarak başvurduğu maçın bilgileri
+            try {
+                $stmt = $this->pdo->prepare("SELECT 
+                min_player_point, max_player_point, only_licensed_allowed, match_status FROM matches
+                WHERE id = ?");
+                $stmt->execute([$matchId]);
+
+            } catch(\PDOException $e) {
+                error_log($e->getMessage());
+                http_response_code(500);
+                echo json_encode(["error" => "server error"]);
+                return [];
+            }
+        }
+
+        public function apply(string $matchId): void {
+            $authUser = $_REQUEST["auth_user"];
+            $authUserId = $authUser->id;
+
+            $postData = json_decode(file_get_contents("php://input"), true);
+            $applicationNote = $postData["application_note"] ?? null;
+
+            $data = $this->getData($authUserId);
+
+            // Adayın bilgileri eksiksiz var mı?
+            if(empty($data)) {
+                http_response_code(422);
+                echo json_encode(["error" => "information not found"]);
                 return;
             }
-            
+
             // oyuncu, matchmaker'ın belirlediği gereksinimlere uyuyor mu?
-            $service = new CandidateService();
+            $service = new CandidateService($data);
 
-            $playerSatisfies = $service->checkUp($authUserId, $matchId);
-
-            if(!$playerSatisfies) {
+            if(!$service->canApply()) {
                 http_response_code(422);
                 echo json_encode(["error" => "does not satisfy requirements"]);
                 return;
             }
-            
-            try {
 
-                // zaten başvurmuş mu?
+            // zaten başvurmuş mu?
+            try {
                 $stmt = $this->pdo->prepare("SELECT match_id, player_id
                 FROM candidates WHERE match_id = ? and player_id = ?");
                 $stmt->execute([$matchId, $authUserId]);
@@ -74,7 +118,7 @@
 
                 http_response_code(201);
                 echo json_encode([
-                    "message" => "candidate created successfully",
+                    "message" => "candidate applied successfully",
                     "candidate_data" => [
                         "candidate_id" => $this->pdo->lastInsertId(),
                         "match_id" => $matchId,
@@ -88,7 +132,5 @@
                 echo json_encode(["error" => "server error"]);
                 return;
             }
-        }
-
-        
+        } 
     }
