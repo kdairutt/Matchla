@@ -80,13 +80,6 @@ php -S localhost:8000
 |--------|----------|----------|
 | POST | `/api/matches/{matchId}/players/{playerId}` | Oyuncuyu değerle |
 
-## Mimari
-
-Uygulama katmanlı bir mimari üzerine kurulmuştur:
-
-```
-İstek → Router → Middleware → Controller → Service → Model → Veritabanı
-```
 
 - **Router** — Gelen isteği method ve URI'a göre ilgili controller'a yönlendirir. Statik ve dinamik route'ları destekler.
 - **Middleware** — JWT doğrulama, yetkilendirme ve rate limiting işlemlerini yürütür.
@@ -99,12 +92,15 @@ Uygulama katmanlı bir mimari üzerine kurulmuştur:
 - [x] Router (statik + dinamik route desteği)
 - [x] Authentication (JWT)
 - [x] Oyuncu profili
-- [ ] Maç yönetimi ve yaşam döngüsü
-- [ ] Aday/Katılımcı sistemi
+- [x] Maç yönetimi ve yaşam döngüsü
+- [x] Aday/Katılımcı sistemi
 - [ ] Puanlama algoritması
 - [ ] Takım dengeleme algoritması
 - [ ] Aday önerme algoritması
 
+## Yapılacaklar (Öncelik Sıralı)
+- **Models** - Data transaction'ları için Modeller. Yüksek öncelik.
+- **Helpers** - Kalıplaşmış response ifadeleri, request verilerinin yüklenmesi ve benzeri.
 ## Hakkında
 
 Bu proje, YBS370 — Sistem Analizi ve Tasarımı dersi kapsamında hazırlanan [Matchla SRS belgesi](docs/SRS.pdf) temel alınarak geliştirilmektedir.
