@@ -125,5 +125,80 @@
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
             }
-        } 
+        }
+
+        public function decide(string $matchId, string $candidateId): void {
+            $authUser = $_REQUEST["auth_user"];
+            $authUserId = $authUser->id;
+
+            try {
+                // authUser, matchmaker mı?
+                $stmt = $this->pdo->prepare("SELECT matchmaker_id FROM matches WHERE id = ?");
+                $stmt->execute([$matchId]);
+
+                $matchmakerId = $stmt->fetchColumn();
+
+                if(!$matchmakerId || (int) $matchmakerId !== (int) $authUserId) {
+                    http_response_code(403);
+                    echo json_encode(["error" => "forbidden"]);
+                    return; 
+                }
+
+                $stmt = $this->pdo->prepare("SELECT status FROM candidates WHERE id = ? AND match_id = ?");
+                $stmt->execute([$candidateId, $matchId]);
+                
+                $status = $stmt->fetchColumn();
+
+                // böyle bir candidate var mı? 
+                if(!$status) {
+                    http_response_code(404);
+                    echo json_encode(["error" => "candidate not found"]);
+                    return;
+                }
+
+                // candidate hakkında karar verilmiş mi?
+                if($status !== "pending") {
+                    http_response_code(400);
+                    echo json_encode(["error" => "already decided"]);
+                    return;
+                }
+                $postData = json_decode(file_get_contents("php://input"), true);
+                $decision = $postData["decision"] ?? null;
+
+                if(!in_array($decision, ["accept", "reject"])) {
+                    http_response_code(422);
+                    echo json_encode(["error" => "invalid decision"]);
+                    return;
+                }
+
+                $status = $decision === "accept" ? "accepted" : "denied";
+
+                $stmt = $this->pdo->prepare("UPDATE candidates SET status = ? WHERE id = ?");
+                $stmt->execute([$status, $candidateId]);
+
+                if($stmt->rowCount() < 1) {
+                    http_response_code(500);
+                    echo json_encode(["error" => "server error"]);
+                    return;
+                }
+
+                http_response_code(200);
+                echo json_encode(
+                    [
+                        "message" => "decision made successfully",
+                        "participant_info" => [
+                            "id" => $candidateId,
+                            "match_id" => $matchId,
+                            "matchmaker_id" => $authUserId
+                        ]
+                    ]
+                );
+
+            } catch(\PDOException $e) {
+                error_log($e->getMessage());
+                http_response_code(500);
+                echo json_encode(["error" => "server error"]);
+                return;
+            }
+        }
     }
