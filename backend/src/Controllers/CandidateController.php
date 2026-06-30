@@ -201,4 +201,54 @@
                 return;
             }
         }
+
+        public function index(string $matchId): void {
+            $authUser = $_REQUEST["auth_user"];
+            $authUserId = $authUser->id;
+            try {
+                // matchmaker mı adayları görüntülemek istiyor?
+                $stmt = $this->pdo->prepare("SELECT matchmaker_id FROM matches WHERE id = ?");
+                $stmt->execute([$matchId]);
+                $matchmakerId = $stmt->fetchColumn();
+
+                $isMatchmaker = (int)$matchmakerId === (int)$authUserId;
+
+                // başka bir katılımcı mı adayları görüntülemek istiyor?
+                $stmt = $this->pdo->prepare("SELECT status FROM candidates WHERE 
+                match_id = ? AND player_id = ?");
+                $stmt->execute([$matchId, $authUserId]);
+                $status = $stmt->fetchColumn();
+
+                $isParticipant = $status === "accepted";
+
+                if(!$isMatchmaker && !$isParticipant) {
+                    http_response_code(403);
+                    echo json_encode(["error" => "forbidden"]);
+                    return;
+                }
+
+                // candidate'ları al
+                $stmt = $this->pdo->prepare("SELECT c.id AS candidate_id, c.status, c.application_note, c.created_at,
+                p.id AS player_id, p.name, p.surname, p.general_skill_point, p.loyalty_point FROM 
+                candidates c
+                JOIN players p ON p.id = c.player_id
+                WHERE c.match_id = ? ORDER BY c.created_at DESC");
+                
+                $stmt->execute([$matchId]);
+                $candidates = $stmt->fetchAll();
+
+                http_response_code(200);
+                echo json_encode([
+                    "match_id" => $matchId,
+                    "matchmaker_id" => $matchmakerId,
+                    "candidates" => $candidates
+                ]);
+
+            } catch(\PDOException $e) {
+                error_log($e->getMessage());
+                http_response_code(500);
+                echo json_encode(["error" => "server error"]);
+                return;
+            }
+        }
     }
