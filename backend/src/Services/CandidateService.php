@@ -9,26 +9,14 @@
         private array $appliedMatch;
 
         public function __construct(array $data) {
-            $this->candidate = [
-                "loyalty_point" => $data["loyalty_point"],
-                "general_skill_point" => $data["general_skill_point"],
-                "licensed" => $data["licensed"],
-            ];
+            $this->candidate = $data["candidate"];
+
             $playerPoint = $this->candidate["general_skill_point"] * 0.5 + $this->candidate["loyalty_point"] * 0.5;  
             $this->candidate["player_point"] = $playerPoint;
 
-            $this->acceptedMatches = $data["accepted_started_at"] ? [
-                "started_at" => $data["accepted_started_at"],
-                "ended_at" => $data["accepted_ended_at"],
-            ] : null;
+            $this->acceptedMatches = $data["accepted_matches"];
 
-            $this->appliedMatch = [
-                "started_at" => $data["applied_started_at"],
-                "ended_at" => $data["applied_ended_at"],
-                "only_licensed_allowed" => $data["only_licensed_allowed"],
-                "min_player_point" => $data["min_player_point"],
-                "max_player_point" => $data["max_player_point"],
-            ];
+            $this->appliedMatch = $data["applied_match"];
         }
 
         private function satisfiesPlayerPoint(): bool {
@@ -52,15 +40,17 @@
         
         // eş zamanlı tek aktif rol kuralı gereği, diğer maçlarla olan olası çakışmaları kontrol et
         private function conflictsWithOtherMatches(): bool {
+
+            if($this->acceptedMatches === null) return true;
             /*
                 başvurduğum maçın başlangıç tarihi, kabul aldığım maçın bitiş 
                 tarihinden önce ise VE
                 başvurduğum maçın bitiş tarihi, kabul aldığım maçın başlangıç 
                 tarihinden sonra ise
             */
-            $conflicts = array_filter($acceptedMatches, fn($acceptedMatch) =>
-                $appliedMatch["started_at"] < $acceptedMatch["ended_at"] &&
-                $appliedMatch["ended_at"] > $acceptedMatch["started_at"] 
+            $conflicts = array_filter($this->acceptedMatches, fn($acceptedMatch) =>
+                $this->appliedMatch["started_at"] < $acceptedMatch["ended_at"] &&
+                $this->appliedMatch["ended_at"] > $acceptedMatch["started_at"] 
             );
 
             return empty($conflicts);
