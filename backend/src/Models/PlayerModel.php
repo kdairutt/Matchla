@@ -2,7 +2,7 @@
     namespace Matchla\Models;
 
     class PlayerModel extends BaseModel {
-        protected $table = "players";
+        protected string $table = "players";
 
         protected array $fillable = [
             "name",

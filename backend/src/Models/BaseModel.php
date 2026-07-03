@@ -14,10 +14,17 @@
             $this->pdo = Database::getInstance()->getPDO();
         }
         
-        public function find(int $id, array $columns = ['*']): ?array {
+        public function find(array $columns = ['*'], array $conditions): ?array {
+
+            $placeholders = array_map(fn($c) => "$c = ?", array_keys($conditions));
+
+            $col = count($placeholders) === 1 ? $placeholders[0] : implode(" AND ", $placeholders);
+
             $cols = implode(", ", $columns);
-            $stmt = $this->pdo->prepare("SELECT {$cols} FROM {$this->table} WHERE id = ?");
-            $stmt->execute([$id]);
+
+            $stmt = $this->pdo->prepare("SELECT {$cols} FROM {$this->table} WHERE {$col}");
+            $stmt->execute(array_values($conditions));
+
             return $stmt->fetch() ?: null;
         }
 

@@ -1,23 +1,21 @@
 <?php
     namespace Matchla\Controllers;
     
-    use Matchla\Config\Database;
+    use Matchla\Models\PlayerModel;
     use Firebase\JWT\JWT;
 
     class AuthController {
+        private PlayerModel $player;
 
-        // register için helper metotlar
-        private function isEmailUnique(string $email): bool {
-
-            $pdo = Database::getInstance()->getPDO();
-            $stmt = $pdo->prepare("SELECT id FROM players WHERE email = ?");
-            
-            $stmt->execute([$email]);
-
-            if($stmt->fetch()) return false;
-
-            return true;
+        public function __construct() {
+            $this->player = new PlayerModel();
         }
+
+        private function isEmailUnique(string $email): bool {
+            $exists = $this->player->find(columns: ["id"], conditions: ["email" => $email]);
+            return empty($exists);
+        }
+
         private function validate(array $data): ?string {
             
             if(empty($data["email"])) return "email required";
@@ -30,15 +28,11 @@
         }
 
         public function register(): void {
-
-            $pdo = Database::getInstance()->getPDO();
-
-            // request body'i al ve decode et
             $body = file_get_contents("php://input");
             $data = json_decode($body, true);
 
-            // bazı validasyon işlemleri
             $error = $this->validate($data);
+
             if($error !== null) {
                 http_response_code(422);
                 echo json_encode([
@@ -59,38 +53,37 @@
             // şifre'yi gizleme işlemleri
             $pw = $data["password"];
             $pw_hashed = password_hash($pw, PASSWORD_BCRYPT);
-            
-            $stmt = $pdo->prepare(
-                "INSERT INTO players 
-                (name, surname, email, date_of_birth, bio, password_sum)
-                VALUES (?, ?, ?, ?, ?, ?)"
-            );
 
-            $stmt->execute([
-                $data["name"],
-                $data["surname"],
-                $data["email"],
-                $data["date_of_birth"],
-                $data["bio"],
-                $pw_hashed]);
-
-            http_response_code(201);
-            echo json_encode([
-                "message" => "user successfully registered",
-            ]);
+            try {
+                $this->player
+                ->create([
+                    "name" => $data["name"],
+                    "surname" => $data["surname"],
+                    "email" => $data["email"],
+                    "date_of_birth" => $data["date_of_birth"],
+                    "bio" => $data["bio"],
+                    "password_sum" => $pw_hashed
+                ]);
+                http_response_code(201);
+                echo json_encode([
+                    "message" => "user successfully registered",
+                ]);
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo json_encode(["error" => "server error"]);
+                return;
+            }
         }
 
         public function login(): void {
             $body = file_get_contents("php://input");
             $user = json_decode($body, true);
 
-            try {
-                $pdo = Database::getInstance()->getPDO();
-
-                $stmt = $pdo->prepare("SELECT id, name, surname, email, password_sum FROM players WHERE email = ?");
-                $stmt->execute([$user["email"]]);
-
-                $userCredentials = $stmt->fetch();
+            try {   
+                $userCredentials = $this->player->find(
+                    columns: ["id", "name", "surname", "email", "password_sum"],
+                    conditions: ["email" => $user["email"]]
+                );
 
                 // böyle bir user yoksa veya var ama şifre yanlışsa
                 if(!$userCredentials || !password_verify($user["password"], $userCredentials["password_sum"])) {
@@ -118,12 +111,7 @@
                     ]
                 ]);
 
-            } catch(PDOException $e) {
-                http_response_code(500);
-                echo json_encode(["error" => "database error"]);
-                return;
-
-            } catch(Exception $e) {
+            } catch (Exception $e) {
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
                 return;
