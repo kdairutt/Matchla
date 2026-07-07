@@ -29,6 +29,13 @@
             "description"
         ];
 
+        public function cancel(string $matchId): bool {
+            $stmt = $this->pdo->prepare("UPDATE matches SET match_status = ? WHERE id = ?");
+            $stmt->execute(["cancelled", $matchId]);
+
+            return $stmt->rowCount() > 0;
+        }
+
         public function getMatchmakerId(string $matchId): ?string {
             $stmt = $this->pdo->prepare("SELECT matchmaker_id
             FROM matches WHERE id = ?");

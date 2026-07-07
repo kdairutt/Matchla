@@ -140,6 +140,7 @@
                 echo json_encode([
                     "message" => "match updated successfully"
                 ]);
+
             // client taraflı hataları loglamak pek de gerekli değil
             } catch (\InvalidArgumentException $e) {
                 http_response_code(400);
@@ -157,36 +158,36 @@
             $authUserId = $_REQUEST["auth_user"]->id;
 
             try {
-                $stmt = $this->pdo->prepare("SELECT matchmaker_id, match_status FROM matches WHERE id = ?");
-                $stmt->execute([$matchId]);
-                
-                $match = $stmt->fetch();
-
-                if(!$match) {
+                $result = $this->match->find(columns: ["matchmaker_id", "match_status"], conditions: ["id" => $matchId]);
+                if(!$result) {
                     http_response_code(404);
                     echo json_encode(["error" => "match not found"]);
                     return;
                 }
-            
-                $matchmakerId = $match["matchmaker_id"];
-                $matchStatus = $match["match_status"];
+
+                // getMatchmakerId de kullanılabilirdi ama olsun
+                $matchmakerId = $result["matchmaker_id"];
+                $matchStatus = $result["match_status"];
 
                 if($matchStatus === "cancelled") {
                     http_response_code(400);
                     echo json_encode(["error" => "match already cancelled"]);
-
                     return;
                 }
 
-                if(!($authUserId === $matchmakerId)) {
+                if(!((int) $authUserId === (int) $matchmakerId)) {
                     http_response_code(403);
                     echo json_encode(["error" => "forbidden"]);
-
                     return;
                 }
 
-                $stmt = $this->pdo->prepare("UPDATE matches SET match_status = 'cancelled' WHERE id = ?");
-                $stmt->execute([$matchId]);
+                $cancelled = $this->match->cancel($matchId);
+
+                if(!$cancelled) {
+                    http_response_code(500);
+                    echo json_encode(["error" => "server error"]);
+                    return;
+                }
 
                 http_response_code(200);
                 echo json_encode([
@@ -194,11 +195,10 @@
                     "matchmaker_id" => $matchmakerId
                 ]);
 
-            } catch(\PDOException $e) {
+            } catch(\Exception $e) {
                 error_log($e->getMessage());
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
-
                 return;
             }
         }
