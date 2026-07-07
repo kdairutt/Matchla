@@ -1,13 +1,19 @@
 <?php
     namespace Matchla\Controllers;
 
-    use Matchla\Config\Database;
-    
+    use Matchla\Models\MatchModel;
+    use Matchla\Models\CandidateModel;
+    use Matchla\Models\RatingModel;
+
     class RatingController {
-        private \PDO $pdo;
+        private MatchModel $match;
+        private CandidateModel $candidate;
+        private RatingModel $rating;
 
         public function __construct() {
-            $this->pdo = Database::getInstance()->getPDO();
+            $this->match = new MatchModel();
+            $this->candidate = new CandidateModel();
+            $this->rating = new RatingModel();
         }
 
         public function rate(string $matchId, string $evaluatedId): void {
@@ -17,45 +23,59 @@
 
             try {
                 // maç, değerleme aşamasında mı?
-                $stmt = $this->pdo->prepare("SELECT match_status 
-                FROM matches WHERE id = ?");
-                $stmt->execute([$matchId]);
-                if($stmt->fetchColumn() !== "evaluation") {
+                $result = $this->match->find(columns: ["match_status"], conditions: ["id" => $matchId]);
+
+                if(!$result) {
+                    http_response_code(404);
+                    echo json_encode(["error" => "match not found"]);
+                    return;
+                }
+
+                if($result["match_status"] !== "evaluation") {
                     http_response_code(400);
-                    echo json_encode(
-                        ["error" => "match not under evaluation"]
-                        );
+                    echo json_encode(["error" => "match not under evaluation"]);
+                    return;
+                }
+
+                // değerleme yapan, kendini değerlendirmeye çalışıyor mu?
+                if ((int) $evaluatorId === (int) $evaluatedId) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "cannot evaluate the evaluator"]);
                     return;
                 }
 
                 // Değerleme yapan ve değerlendirilen, bir katılımcı mı?
-                $stmt = $this->pdo->prepare("SELECT status FROM candidates
-                WHERE player_id = ? AND match_id = ? AND status = 'accepted'");
+                $evaluatorIsParticipant = $this->candidate->find(
+                    columns: ["status"],
+                    conditions: [
+                        "player_id" => $evaluatorId,
+                        "match_id" => $matchId,
+                        "status" => "accepted"
+                    ]);
 
-                $stmt->execute([$evaluatorId, $matchId]);
-                $evaluatorIsParticipant = $stmt->rowCount() > 0;
-
-                $stmt->execute([$evaluatedId, $matchId]);
-                $evaluatedIsParticipant = $stmt->rowCount() > 0;
+                $evaluatedIsParticipant = $this->candidate->find(
+                    columns: ["status"],
+                    conditions: [
+                        "player_id" => $evaluatedId,
+                        "match_id" => $matchId,
+                        "status" => "accepted"
+                    ]);
 
                 if(!$evaluatorIsParticipant || !$evaluatedIsParticipant) {
                     http_response_code(403);
                     echo json_encode(["error" => "forbidden"]);
                     return;
                 }
-            
-                // değerleme yapan, kendini değerlendirmeye çalışıyor mu?
-                if ((int)$evaluatorId === (int)$evaluatedId) {
-                    http_response_code(400);
-                    echo json_encode(["error" => "cannot evaluate the evaluator"]);
-                    return;
-                }
 
                 // zaten değerleme yapılmış mı? (zaten unique key var ama olsun)
-                $stmt = $this->pdo->prepare("SELECT id FROM ratings WHERE
-                evaluator_id = ? AND evaluated_id = ? AND match_id = ?");
-                $stmt->execute([$evaluatorId, $evaluatedId, $matchId]);
-                $alreadyRated = $stmt->rowCount() > 0;
+                $alreadyRated = $this->rating->find(
+                    columns: ["id"],
+                    conditions: [
+                        "evaluator_id" => $evaluatorId, 
+                        "evaluated_id" => $evaluatedId,
+                        "match_id" => $matchId
+                    ]);
+                    
                 if($alreadyRated) {
                     http_response_code(400);
                     echo json_encode(
@@ -69,30 +89,23 @@
                     echo json_encode(["error" => "invalid skill point"]);
                     return;
                 }
+                
+                $ratingData = [
+                    "evaluator_id" => $evaluatorId,
+                    "evaluated_id" => $evaluatedId,
+                    "match_id" => $matchId,
+                    "skill_point" => $skillPoint
+                ];
 
-                $stmt = $this->pdo->prepare("INSERT INTO ratings
-                (evaluator_id, evaluated_id, match_id, skill_point)
-                VALUES (?, ?, ?, ?)");
-
-                $stmt->execute([$evaluatorId, $evaluatedId, $matchId, $skillPoint]);
-
-                if(!$stmt->rowCount() > 0) {
-                    http_response_code(500);
-                    echo json_encode(["error" => "server error"]);
-                    return;
-                }
+                $this->rating->create($ratingData);
 
                 http_response_code(201);
                 echo json_encode([
                     "message" => "player rated successfully",
-                    "rating_data" => [
-                        "evaluator_id" => $evaluatorId,
-                        "evaluated_id" => $evaluatedId,
-                        "match_id" => $matchId,
-                        "skill_point" => $skillPoint,
-                    ]
+                    "rating_data" => $ratingData
                 ]);
-            } catch(\PDOException $e) {
+
+            } catch(\Exception $e) {
                 error_log($e->getMessage());
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
