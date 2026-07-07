@@ -1,18 +1,15 @@
 <?php 
     namespace Matchla\Controllers;
 
-    use Matchla\Config\Database;
     use Matchla\Services\MatchService;
     use Matchla\Models\PlayerModel;
     use Matchla\Models\MatchModel;
 
     class MatchController {
-        private \PDO $pdo;
         private PlayerModel $player;
         private MatchModel $match;
 
         public function __construct() {
-            $this->pdo = Database::getInstance()->getPDO();
             $this->player = new PlayerModel();
             $this->match = new MatchModel();
         }
