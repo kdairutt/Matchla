@@ -115,33 +115,9 @@
             $authUserId = $_REQUEST["auth_user"]->id;
 
             $data = json_decode(file_get_contents("php://input"), true);
-
-            // değiştirilebilecek kolonlar
-            $allowedFields = ["started_at", "ended_at", "target_participant",
-            "min_player_point", "max_player_point", "only_licensed_allowed", "description"];
-
-            // değiştirilmesi istenen kolonlar
-            $filteredFields = array_filter($allowedFields, fn($f) => isset($data[$f]));
-
-            // SQL'e uygun hale getir
-            $fields = array_map(fn($f) => "$f = ?", $filteredFields);
-
-            // değerler
-            // $data["field"], $filteredFields içindeki her bir değer için.
-            $values = array_map(fn($f) => $data[$f], $filteredFields);
-            $values[] = $matchId;
-
-            if(empty($fields)) {
-                http_response_code(400);
-                echo json_encode(["error" => "bad request"]);
-                return;
-            }
             
             try {
-                $stmt = $this->pdo->prepare("SELECT matchmaker_id FROM matches WHERE id = ?");
-                $stmt->execute([$matchId]);
-
-                $matchmakerId = $stmt->fetchColumn();
+                $matchmakerId = $this->match->getMatchmakerId($matchId);
 
                 if(!$matchmakerId) {
                     http_response_code(404);
@@ -149,23 +125,28 @@
                     return;
                 }
 
-                if(!($authUserId === $matchmakerId)) {
+                if(!((int) $authUserId === (int) $matchmakerId)) {
                     http_response_code(403);
                     echo json_encode(["error" => "forbidden"]);
-
                     return;
                 }
 
-                $stmt = $this->pdo->prepare("UPDATE matches SET " . implode(", ", $fields) . " WHERE id = ?");
-                $stmt->execute($values);
+                $updated = $this->match->update(
+                    id: $matchId,
+                    data: $data
+                );
 
                 http_response_code(200);
                 echo json_encode([
-                    "message" => "match updated successfully",
-                    "updated_columns" => array_values($filteredFields)
+                    "message" => "match updated successfully"
                 ]);
+            // client taraflı hataları loglamak pek de gerekli değil
+            } catch (\InvalidArgumentException $e) {
+                http_response_code(400);
+                echo json_encode(["error" => $e->getMessage()]);
+                return;
 
-            } catch(\PDOException $e) {
+            } catch(\Exception $e) {
                 error_log($e->getMessage());
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
