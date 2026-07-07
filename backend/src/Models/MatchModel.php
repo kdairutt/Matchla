@@ -28,4 +28,15 @@
             "only_licensed_allowed", 
             "description"
         ];
+
+        public function getMatchmakerId(string $matchId): ?string {
+            $stmt = $this->pdo->prepare("SELECT matchmaker_id
+            FROM matches WHERE id = ?");
+
+            $stmt->execute([$matchId]);
+
+            $result = $stmt->fetchColumn();
+
+            return $result === false ? null : $result;
+        }
     }

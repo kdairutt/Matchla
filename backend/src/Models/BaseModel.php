@@ -24,7 +24,7 @@
 
             $stmt = $this->pdo->prepare("SELECT {$cols} FROM {$this->table} WHERE {$col}");
             $stmt->execute(array_values($conditions));
-
+        
             return $stmt->fetch() ?: null;
         }
 
@@ -35,7 +35,7 @@
             return $stmt->fetchAll();
         }
 
-        public function delete(int $id): bool {
+        public function delete(string $id): bool {
             $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = ?");
             $stmt->execute([$id]);
             return $stmt->rowCount() > 0;
@@ -51,10 +51,10 @@
 
             $stmt->execute($values);
             
-            return (int) $this->pdo->lastInsertId();
+            return $this->pdo->lastInsertId();
         }
 
-        public function update(int $id, array $data): bool { 
+        public function update(string $id, array $data): bool { 
             // güncellenmesi istenen alanlar
             $fields = array_filter($this->updatable, fn($f) => isset($data[$f]));
 
