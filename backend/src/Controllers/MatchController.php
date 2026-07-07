@@ -31,16 +31,8 @@
             $lat = $this->isInputEmpty($_GET["lat"] ?? null, "lat");
             $lng = $this->isInputEmpty($_GET["lng"] ?? null, "lng");
             
-
-
-
-
-            $stmt = $this->pdo->prepare("SELECT is_premium FROM players 
-            WHERE id = ?");
-
-            $stmt->execute([$userId]);
-            
-            $premium = (bool) $stmt->fetchColumn();
+            $result = $this->player->find(columns: ["is_premium"], conditions: ["id" => $userId]);
+            $premium = (bool) $result["is_premium"];
 
             $service = new MatchService();
 
