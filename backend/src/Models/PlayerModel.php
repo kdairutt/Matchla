@@ -18,6 +18,5 @@
             "surname",
             "bio",
             "pp_reference",
-            "licensed",
         ];
     }
