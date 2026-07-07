@@ -3,12 +3,15 @@
 
     use Matchla\Config\Database;
     use Matchla\Services\MatchService;
+    use Matchla\Models\PlayerModel;
 
     class MatchController {
         private \PDO $pdo;
+        private PlayerModel $player;
 
         public function __construct() {
             $this->pdo = Database::getInstance()->getPDO();
+            $player = new PlayerModel();
         }
 
         private function isInputEmpty(mixed $input, string $fieldName): mixed {
@@ -28,6 +31,10 @@
             $lat = $this->isInputEmpty($_GET["lat"] ?? null, "lat");
             $lng = $this->isInputEmpty($_GET["lng"] ?? null, "lng");
             
+
+
+
+
             $stmt = $this->pdo->prepare("SELECT is_premium FROM players 
             WHERE id = ?");
 
