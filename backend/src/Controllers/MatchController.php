@@ -50,10 +50,6 @@
         public function show(string $matchId): void {
             $result = $this->match->find(conditions: ["id" => $matchId]);
 
-            // $stmt = $this->pdo->prepare("SELECT * FROM matches WHERE id = ?");
-            // $stmt->execute([$matchId]);
-            // $match = $stmt->fetch();
-
             if(!$result) {
                 http_response_code(404);
                 echo json_encode([
@@ -76,40 +72,28 @@
             $sportsTypeId = $this->isInputEmpty($data["sports_type_id"] ?? null, "sports_type_id");
             $fieldId = $this->isInputEmpty($data["field_id"] ?? null, "field_id");
             $startedAt = $this->isInputEmpty($data["started_at"] ?? null, "started_at");
+            $endedAt = $this->isInputEmpty($data["ended_at"] ?? null, "ended_at");
             $targetParticipant = $this->isInputEmpty($data["target_participant"] ?? null, "target_participant");
 
             try {
-                $stmt = $this->pdo->prepare("INSERT INTO matches 
-                (matchmaker_id, sports_type_id, field_id, started_at,
-                ended_at, target_participant, min_player_point,
-                max_player_point, only_licensed_allowed, description)
-                VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-                $stmt->execute([
-                    $matchmakerId,
-                    $sportsTypeId,
-                    $fieldId,
-                    $data["started_at"],
-                    $data["ended_at"],
-                    $targetParticipant,
-                    $data["min_player_point"] ?? null,
-                    $data["max_player_point"] ?? null,
-                    $data["only_licensed_allowed"] ?? 0,
-                    $data["description"] ?? null,
-                ]);
-
-                if($stmt->rowCount() < 1) {
-                    http_response_code(500);
-                    echo json_encode(["error" => "server error"]);
-                    return;
-                }
+                $newMatchId = $this->match->create([
+                        "matchmaker_id" => $matchmakerId,
+                        "sports_type_id" => $sportsTypeId,
+                        "field_id" => $fieldId,
+                        "started_at" => $startedAt,
+                        "ended_at" => $endedAt,
+                        "target_participant" => $targetParticipant,
+                        "min_player_point" => $data["min_player_point"] ?? null,
+                        "max_player_point" => $data["max_player_point"] ?? null,
+                        "only_licensed_allowed" => $data["only_licensed_allowed"] ?? 0,
+                        "description" => $data["description"] ?? null
+                    ]);
 
                 http_response_code(201);
                 echo json_encode([
                     "message" => "match created successfully",
                     "match" => [
-                        "id" => $this->pdo->lastInsertId(),
+                        "id" => $newMatchId,
                         "matchmaker_id" => $matchmakerId,
                         "sports_type_id" => $sportsTypeId,
                         "field_id" => $fieldId,
@@ -119,7 +103,8 @@
                 ]);
                 return;
                 
-            } catch(\PDOException $e) {
+            } catch(\Exception $e) {
+                http_response_code(500);
                 error_log($e->getMessage());
                 echo json_encode(["error" => "server error"]);
                 return;
