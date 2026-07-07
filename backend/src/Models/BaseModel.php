@@ -14,7 +14,7 @@
             $this->pdo = Database::getInstance()->getPDO();
         }
         
-        public function find(array $columns = ['*'], array $conditions): ?array {
+        public function find( array $conditions, array $columns = ['*']): ?array {
 
             $placeholders = array_map(fn($c) => "$c = ?", array_keys($conditions));
 

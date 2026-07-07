@@ -4,14 +4,17 @@
     use Matchla\Config\Database;
     use Matchla\Services\MatchService;
     use Matchla\Models\PlayerModel;
+    use Matchla\Models\MatchModel;
 
     class MatchController {
         private \PDO $pdo;
         private PlayerModel $player;
+        private MatchModel $match;
 
         public function __construct() {
             $this->pdo = Database::getInstance()->getPDO();
-            $player = new PlayerModel();
+            $this->player = new PlayerModel();
+            $this->match = new MatchModel();
         }
 
         private function isInputEmpty(mixed $input, string $fieldName): mixed {
@@ -45,12 +48,13 @@
         }
 
         public function show(string $matchId): void {
-            $stmt = $this->pdo->prepare("SELECT * FROM matches WHERE id = ?");
-            $stmt->execute([$matchId]);
+            $result = $this->match->find(conditions: ["id" => $matchId]);
 
-            $match = $stmt->fetch();
+            // $stmt = $this->pdo->prepare("SELECT * FROM matches WHERE id = ?");
+            // $stmt->execute([$matchId]);
+            // $match = $stmt->fetch();
 
-            if(!$match) {
+            if(!$result) {
                 http_response_code(404);
                 echo json_encode([
                     "error" => "match not found"
@@ -60,7 +64,7 @@
             }
             
             http_response_code(200);
-            echo json_encode($match);
+            echo json_encode($result);
         }
 
         public function create(): void {
