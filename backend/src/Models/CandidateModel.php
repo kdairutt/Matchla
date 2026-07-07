@@ -2,14 +2,12 @@
     namespace Matchla\Models;
 
     class CandidateModel extends BaseModel {
-        protected $table = "candidates";
+        protected string $table = "candidates";
 
         protected array $fillable = [
             "player_id",
             "match_id",
-            "status",
             "application_note",
-            "attended",
         ];
 
         protected array $updatable = [
@@ -39,6 +37,7 @@
                 JOIN players p ON p.id = c.player_id
                 WHERE c.match_id = ? ORDER BY c.created_at DESC");
             
+            $stmt->execute([$matchId]);
             return $stmt->fetchAll(); 
         }
     }

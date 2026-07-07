@@ -117,7 +117,7 @@
                 // authUser, matchmaker mı?
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
 
-                if(!$matchmakerId || $matchmakerId !== $authUserId) {
+                if(!$matchmakerId || (int) $matchmakerId !== (int) $authUserId) {
                     http_response_code(403);
                     echo json_encode(["error" => "forbidden"]);
                     return; 
@@ -193,7 +193,7 @@
             try {
                 // matchmaker mı adayları görüntülemek istiyor?
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
-                $isMatchmaker = $matchmakerId === $authUserId;
+                $isMatchmaker = (int) $matchmakerId === (int) $authUserId;
 
                 // başka bir katılımcı mı adayları görüntülemek istiyor?
                 $result = $this->candidate->find(
