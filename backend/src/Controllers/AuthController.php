@@ -68,7 +68,7 @@
                 echo json_encode([
                     "message" => "user successfully registered",
                 ]);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
                 return;
@@ -111,7 +111,7 @@
                     ]
                 ]);
 
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 http_response_code(500);
                 echo json_encode(["error" => "server error"]);
                 return;
