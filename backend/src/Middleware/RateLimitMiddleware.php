@@ -2,6 +2,7 @@
     namespace Matchla\Middleware;
     
     use Matchla\Config\Cache;
+use Matchla\Core\Response;
 
     class RateLimitMiddleware {
         public function handle(): bool {
@@ -18,10 +19,7 @@
             }
 
             if($rate > 60) {
-                http_response_code(429);
-                echo json_encode([
-                    "error" => "too many requests"
-                ]);
+                Response::error(429, "too many requests");
                 return false;
             }
 

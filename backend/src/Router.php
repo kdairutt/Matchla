@@ -1,6 +1,8 @@
 <?php
     namespace Matchla;
 
+    use Matchla\Core\Response;
+
     class Router {
         private array $routes = [];
 
@@ -37,9 +39,6 @@
                 }
             }
 
-            http_response_code(404);
-            echo json_encode([
-                "error" => "page not found"
-            ]);
+            Response::error(404, "page not found");
         }
     }

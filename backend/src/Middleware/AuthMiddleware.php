@@ -1,5 +1,7 @@
 <?php
     namespace Matchla\Middleware;
+    
+    use Matchla\Core\Response;
     use Firebase\JWT\JWT;
     use Firebase\JWT\Key;
 
@@ -8,9 +10,7 @@
             $authHeader = $_SERVER["HTTP_AUTHORIZATION"] ?? null;
 
             if(!$authHeader || !\str_contains($authHeader, "Bearer")) {
-
-                http_response_code(401);
-                echo json_encode(["error" => "unauthorized"]);
+                Response::error(401, "unauthorized");
                 return false;
             }
 
@@ -23,8 +23,7 @@
                 return true;
 
             } catch(\Exception $e) {
-                http_response_code(401);
-                echo json_encode(["error" => "unauthorized"]);
+                Response::serverError($e->getMessage());
                 return false;
             }
         }
