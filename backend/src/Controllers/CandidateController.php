@@ -4,6 +4,7 @@
     use Matchla\Models\CandidateModel;
     use Matchla\Models\PlayerModel;
     use Matchla\Models\MatchModel;
+    use Matchla\Core\Response;
 
     class CandidateController {
         private CandidateModel $candidate;
@@ -51,34 +52,25 @@
                 conditions: ["match_id" => $matchId, "player_id" => $authUserId]);
 
                 if(!empty($alreadyApplied)) {
-                    http_response_code(422);
-                    echo json_encode(["error" => "already applied"]);
-                    return;
+                    Response::error(422, "already applied");
                 }
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
 
             $data = $this->getData($authUserId, $matchId);
 
             // Adayın bilgileri eksiksiz var mı?
             if(empty($data)) {
-                http_response_code(422);
-                echo json_encode(["error" => "information not found"]);
-                return;
+                Response::error(422, "information not found");
             }
 
             // oyuncu, matchmaker'ın belirlediği gereksinimlere uyuyor mu?
             $service = new CandidateService($data);
 
             if(!$service->canApply()) {
-                http_response_code(422);
-                echo json_encode(["error" => "does not satisfy requirements"]);
-                return;
+                Response::error(422, "does not satisfy requirements");
             }
 
             // ekle
@@ -92,20 +84,17 @@
                     "application_note" => $applicationNote
                 ]);
 
-                http_response_code(201);
-                echo json_encode([
-                    "message" => "candidate applied successfully",
+                $json = [
                     "candidate_data" => [
                         "candidate_id" => $newCandidateId,
                         "match_id" => $matchId,
                         "application_note" => $applicationNote
                     ]
-                ]);
+                ];
+                Response::success(201, "candidate applied successfully", $json);
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
+                Response::serverError($e->getMessage());
             }
         }
 
@@ -118,9 +107,7 @@
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
 
                 if(!$matchmakerId || (int) $matchmakerId !== (int) $authUserId) {
-                    http_response_code(403);
-                    echo json_encode(["error" => "forbidden"]);
-                    return; 
+                    Response::error(403, "forbidden");
                 }
 
                 $result = $this->candidate->find(
@@ -130,27 +117,21 @@
 
                 // aday var mı?
                 if(!$result) {
-                    http_response_code(404);
-                    echo json_encode(["error" => "candidate not found"]);
-                    return;
+                    Response::error(404, "candidate not found");
                 }
                 
                 $status = $result["status"];
 
                 // candidate hakkında karar verilmiş mi?
                 if($status !== "pending") {
-                    http_response_code(400);
-                    echo json_encode(["error" => "already decided"]);
-                    return;
+                    Response::error(message: "already decided");
                 }
 
                 $postData = json_decode(file_get_contents("php://input"), true);
                 $decision = $postData["decision"] ?? null;
 
                 if(!in_array($decision, ["accept", "reject"])) {
-                    http_response_code(422);
-                    echo json_encode(["error" => "invalid decision"]);
-                    return;
+                    Response::error(422, "invalid decision");
                 }
 
                 $newStatus = $decision === "accept" ? "accepted" : "denied";
@@ -160,29 +141,17 @@
                     data: ["status" => $newStatus]
                 );
 
-                if(!$result) {
-                    http_response_code(500);
-                    echo json_encode(["error" => "server error"]);
-                    return;
-                }
-
-                http_response_code(200);
-                echo json_encode(
-                    [
-                        "message" => "decision made successfully",
-                        "participant_info" => [
+                $json = [
+                    "participant_info" => [
                             "candidate_id" => $candidateId,
                             "match_id" => $matchId,
                             "matchmaker_id" => $authUserId
                         ]
-                    ]
-                );
+                ];
+                Response::success(200, "decision made successfully", $json);
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
 
@@ -204,26 +173,21 @@
                 $isParticipant = $result && $result["status"] === "accepted";
 
                 if(!$isMatchmaker && !$isParticipant) {
-                    http_response_code(403);
-                    echo json_encode(["error" => "forbidden"]);
-                    return;
+                    Response::error(403, "forbidden");
                 }
 
                 // candidate'ları al
                 $candidates = $this->candidate->findAllCandidatesOf($matchId);
 
-                http_response_code(200);
-                echo json_encode([
+                $json = [
                     "match_id" => $matchId,
                     "matchmaker_id" => $matchmakerId,
                     "candidates" => $candidates
-                ]);
+                ];
+                Response::success(200, "success", $json);
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
     }
