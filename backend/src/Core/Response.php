@@ -16,7 +16,7 @@
 
         public static function success(int $code, string $message, array $data = []): void {
             http_response_code($code);
-            $json = array_merge(["message" => $message], $data);
+            $json = array("message" => $message, "data" => $data);
             echo json_encode($json);
             exit;
         }

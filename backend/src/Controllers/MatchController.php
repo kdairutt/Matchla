@@ -1,6 +1,7 @@
 <?php 
     namespace Matchla\Controllers;
 
+    use Matchla\Core\Response;
     use Matchla\Services\MatchService;
     use Matchla\Models\PlayerModel;
     use Matchla\Models\MatchModel;
@@ -15,14 +16,9 @@
         }
 
         private function isInputEmpty(mixed $input, string $fieldName): mixed {
-            if(!empty($input)) return $input;
-
-            http_response_code(422);
-            echo json_encode([
-                "error" => "$fieldName required"
-            ]);
-
-            exit;
+            if(!empty($input)) return $input;   
+            Response::error(422, "{$fieldName} required");
+            return null;
         }
 
         public function index(): void {
@@ -37,27 +33,18 @@
             $service = new MatchService();
 
             $matches = $service->getNearbyMatches($lat, $lng, $premium);
-
-            http_response_code(200);
-            echo json_encode([
-                "matches" => $matches
-            ]);
+            
+            Response::success(200, "success", $matches);
         }
 
         public function show(string $matchId): void {
             $result = $this->match->find(conditions: ["id" => $matchId]);
 
             if(!$result) {
-                http_response_code(404);
-                echo json_encode([
-                    "error" => "match not found"
-                ]);
-
-                return;
+                Response::error(404, "match not found");
             }
             
-            http_response_code(200);
-            echo json_encode($result);
+            Response::success(200, "success", $result);
         }
 
         public function create(): void {
@@ -84,11 +71,9 @@
                         "max_player_point" => $data["max_player_point"] ?? null,
                         "only_licensed_allowed" => $data["only_licensed_allowed"] ?? 0,
                         "description" => $data["description"] ?? null
-                    ]);
+                ]);
 
-                http_response_code(201);
-                echo json_encode([
-                    "message" => "match created successfully",
+                $json = [
                     "match" => [
                         "id" => $newMatchId,
                         "matchmaker_id" => $matchmakerId,
@@ -96,15 +81,12 @@
                         "field_id" => $fieldId,
                         "started_at" => $startedAt,
                         "status" => "open",
-                    ]
-                ]);
-                return;
-                
+                    ]];
+
+                Response::success(201, "match created successfully", $json);
+
             } catch(\Exception $e) {
-                http_response_code(500);
-                error_log($e->getMessage());
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
 
@@ -117,37 +99,26 @@
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
 
                 if(!$matchmakerId) {
-                    http_response_code(404);
-                    echo json_encode(["error" => "match not found"]);
-                    return;
+                    Response::error(404, "match not found");
                 }
 
                 if(!((int) $authUserId === (int) $matchmakerId)) {
-                    http_response_code(403);
-                    echo json_encode(["error" => "forbidden"]);
-                    return;
+                    Response::error(403, "forbidden");
                 }
 
-                $updated = $this->match->update(
+                $this->match->update(
                     id: $matchId,
                     data: $data
                 );
 
-                http_response_code(200);
-                echo json_encode([
-                    "message" => "match updated successfully"
-                ]);
+                Response::success(200, "match updated successfully");
 
             // client taraflı hataları loglamak pek de gerekli değil
             } catch (\InvalidArgumentException $e) {
-                http_response_code(400);
-                echo json_encode(["error" => $e->getMessage()]);
-                return;
+                Response::error(400, $e->getMessage());
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
+                Response::serverError($e->getMessage());
             }
         }
 
@@ -156,47 +127,31 @@
 
             try {
                 $result = $this->match->find(columns: ["matchmaker_id", "match_status"], conditions: ["id" => $matchId]);
+                
                 if(!$result) {
-                    http_response_code(404);
-                    echo json_encode(["error" => "match not found"]);
-                    return;
+                    Response::error(404, "match not found");
                 }
 
                 // getMatchmakerId de kullanılabilirdi ama olsun
                 $matchmakerId = $result["matchmaker_id"];
                 $matchStatus = $result["match_status"];
 
-                if($matchStatus === "cancelled") {
-                    http_response_code(400);
-                    echo json_encode(["error" => "match already cancelled"]);
-                    return;
-                }
-
                 if(!((int) $authUserId === (int) $matchmakerId)) {
-                    http_response_code(403);
-                    echo json_encode(["error" => "forbidden"]);
-                    return;
+                    Response::error(403, "forbidden");
+                }
+                
+                if($matchStatus === "cancelled") {
+                    Response::error(400, "match already cancelled");
                 }
 
-                $cancelled = $this->match->cancel($matchId);
+                $this->match->cancel($matchId);
 
-                if(!$cancelled) {
-                    http_response_code(500);
-                    echo json_encode(["error" => "server error"]);
-                    return;
-                }
+                $json = ["matchmaker_id" => $matchmakerId];
 
-                http_response_code(200);
-                echo json_encode([
-                    "message" => "match deleted successfully",
-                    "matchmaker_id" => $matchmakerId
-                ]);
+                Response::success(200, "match deleted successfully", $json);
 
             } catch(\Exception $e) {
-                error_log($e->getMessage());
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
     }
