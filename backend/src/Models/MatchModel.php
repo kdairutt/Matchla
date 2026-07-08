@@ -29,6 +29,34 @@
             "description"
         ];
 
+        // kullanıcının yarıçapına göre yakınında bulunan açık veya dolmuş tüm maçları görüntüle
+        public function findNearby(float $lat, float $lng, float $radius): array {
+            $stmt = $this->pdo->prepare(
+                'SELECT m.*, (
+                    6371 * ACOS(
+                    COS(RADIANS(:lat)) * COS(RADIANS(f.latitude)) * 
+                    COS(RADIANS(f.longitude) - RADIANS(:lng)) +
+                    SIN(RADIANS(:lat)) * SIN(RADIANS(f.latitude))
+                    )
+                ) AS distance
+                FROM matches m
+                JOIN fields f ON m.field_id = f.id 
+                WHERE m.match_status IN ("open", "full")
+                HAVING distance <= :radius
+                ORDER BY distance ASC'
+            );
+
+            $stmt->execute([
+                ":lat" => $lat,
+                ":lng" => $lng,
+                ":radius" => $radius
+            ]);
+
+            $matches = $stmt->fetchAll();
+
+            return $matches;
+        }
+        
         public function cancel(string $matchId): bool {
             $stmt = $this->pdo->prepare("UPDATE matches SET match_status = ? WHERE id = ?");
             $stmt->execute(["cancelled", $matchId]);

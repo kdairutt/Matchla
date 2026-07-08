@@ -1,8 +1,6 @@
 <?php
     namespace Matchla\Services;
 
-    use Matchla\Config\Database;
-
     class CandidateService {
         private array $candidate;
         private ?array $acceptedMatches;

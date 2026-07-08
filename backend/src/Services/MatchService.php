@@ -1,41 +1,20 @@
 <?php
     namespace Matchla\Services;
 
-    use Matchla\Config\Database;
-
-    // Haversine formülü ile, kullanıcının, sahalara olan 
-    // mesafelerini hesaplayacağız. 
+    use Matchla\Models\MatchModel;
 
     class MatchService {
+        private MatchModel $match;
+
+        public function __construct() {
+            $this->match = new MatchModel;
+        }
+
         public function getNearbyMatches(float $lat, float $lng, bool $isPremium): array {
-            $pdo = Database::getInstance()->getPDO();
 
-            $radius = $isPremium ? 100 : 50;
+            $radius = $isPremium ? 100.0 : 50.0;
 
-            // kullanıcının yarıçapına göre yakınında bulunan açık veya dolmuş
-            // tüm maçları görüntüle
-            $stmt = $pdo->prepare(
-                'SELECT m.*, (
-                    6371 * ACOS(
-                    COS(RADIANS(:lat)) * COS(RADIANS(f.latitude)) * 
-                    COS(RADIANS(f.longitude) - RADIANS(:lng)) +
-                    SIN(RADIANS(:lat)) * SIN(RADIANS(f.latitude))
-                    )
-                ) AS distance
-                FROM matches m
-                JOIN fields f ON m.field_id = f.id 
-                WHERE m.match_status IN ("open", "full")
-                HAVING distance <= :radius
-                ORDER BY distance ASC'
-            );
-
-            $stmt->execute([
-                ":lat" => $lat,
-                ":lng" => $lng,
-                ":radius" => $radius
-            ]);
-
-            $matches = $stmt->fetchAll();
+            $matches = $this->match->findNearby($lat, $lng, $radius);
 
             return $matches;
         }

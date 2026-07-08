@@ -73,6 +73,7 @@
             ["AuthMiddleware", "RateLimitMiddleware"]
         ], 
         
+        // oyuncu güncelle
         [
             "PATCH",
             "/api/players/{id}",
