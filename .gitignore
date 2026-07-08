@@ -1,7 +1,1 @@
-# environmental issues.
-.env
-vendor/
-
-dump.rdb
-
 .vscode
