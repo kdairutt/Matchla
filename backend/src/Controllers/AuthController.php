@@ -1,6 +1,7 @@
 <?php
     namespace Matchla\Controllers;
     
+    use Matchla\Core\Response;
     use Matchla\Models\PlayerModel;
     use Firebase\JWT\JWT;
 
@@ -34,20 +35,12 @@
             $error = $this->validate($data);
 
             if($error !== null) {
-                http_response_code(422);
-                echo json_encode([
-                        "error" => $error
-                    ]);
-                return;
+                Response::error(422, $error);
             }
 
             // email unique mi?
             if(!$this->isEmailUnique($data["email"])) {
-                http_response_code(422);
-                echo json_encode([
-                        "error" => "email must be unique"
-                    ]);
-                return;
+                Response::error(422, "email must be unique");
             }
 
             // şifre'yi gizleme işlemleri
@@ -64,14 +57,10 @@
                     "bio" => $data["bio"],
                     "password_sum" => $pw_hashed
                 ]);
-                http_response_code(201);
-                echo json_encode([
-                    "message" => "user successfully registered",
-                ]);
+                Response::success(201, "user registered successfully");
+
             } catch (\Exception $e) {
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
 
@@ -87,9 +76,7 @@
 
                 // böyle bir user yoksa veya var ama şifre yanlışsa
                 if(!$userCredentials || !password_verify($user["password"], $userCredentials["password_sum"])) {
-                    http_response_code(401);
-                    echo json_encode(["error" => "invalid credentials"]);
-                    return;
+                    Response::error(401, "invalid credentials");
                 }  
 
                 $payload = [
@@ -100,8 +87,7 @@
 
                 $token = JWT::encode($payload, $_ENV["JWT_SECRET"], "HS256");
 
-                http_response_code(200);
-                echo json_encode([
+                $json = [
                     "token" => $token,
                     "user" => [
                         "id" => $userCredentials["id"],
@@ -109,12 +95,11 @@
                         "surname" => $userCredentials["surname"],
                         "email" => $userCredentials["email"]
                     ]
-                ]);
+                ];
+                Response::success(200, "player logged in successfully", $json);
 
             } catch (\Exception $e) {
-                http_response_code(500);
-                echo json_encode(["error" => "server error"]);
-                return;
+                Response::serverError($e->getMessage());
             }
         }
     }
