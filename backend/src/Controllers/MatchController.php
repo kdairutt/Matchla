@@ -1,6 +1,7 @@
 <?php 
     namespace Matchla\Controllers;
 
+    use Matchla\Core\Request;
     use Matchla\Core\Response;
     use Matchla\Services\MatchService;
     use Matchla\Models\PlayerModel;
@@ -22,12 +23,12 @@
         }
 
         public function index(): void {
-            $userId = $_REQUEST["auth_user"]->id;
+            $authUserId = Request::getAuthUserId();
 
             $lat = $this->isInputEmpty($_GET["lat"] ?? null, "lat");
             $lng = $this->isInputEmpty($_GET["lng"] ?? null, "lng");
             
-            $result = $this->player->find(columns: ["is_premium"], conditions: ["id" => $userId]);
+            $result = $this->player->find(columns: ["is_premium"], conditions: ["id" => $authUserId]);
             $premium = (bool) $result["is_premium"];
 
             $service = new MatchService();
@@ -48,20 +49,20 @@
         }
 
         public function create(): void {
-            $authUser = $_REQUEST["auth_user"];
-            $matchmakerId = $authUser->id;
 
-            $data = json_decode(file_get_contents("php://input"), true);
+            $authUserId = Request::getAuthUserId();
 
-            $sportsTypeId = $this->isInputEmpty($data["sports_type_id"] ?? null, "sports_type_id");
-            $fieldId = $this->isInputEmpty($data["field_id"] ?? null, "field_id");
-            $startedAt = $this->isInputEmpty($data["started_at"] ?? null, "started_at");
-            $endedAt = $this->isInputEmpty($data["ended_at"] ?? null, "ended_at");
-            $targetParticipant = $this->isInputEmpty($data["target_participant"] ?? null, "target_participant");
+            $postData = Request::getPostData();
+
+            $sportsTypeId = $this->isInputEmpty($postData["sports_type_id"] ?? null, "sports_type_id");
+            $fieldId = $this->isInputEmpty($postData["field_id"] ?? null, "field_id");
+            $startedAt = $this->isInputEmpty($postData["started_at"] ?? null, "started_at");
+            $endedAt = $this->isInputEmpty($postData["ended_at"] ?? null, "ended_at");
+            $targetParticipant = $this->isInputEmpty($postData["target_participant"] ?? null, "target_participant");
 
             try {
                 $newMatchId = $this->match->create([
-                        "matchmaker_id" => $matchmakerId,
+                        "matchmaker_id" => $authUserId,
                         "sports_type_id" => $sportsTypeId,
                         "field_id" => $fieldId,
                         "started_at" => $startedAt,
@@ -76,7 +77,7 @@
                 $json = [
                     "match" => [
                         "id" => $newMatchId,
-                        "matchmaker_id" => $matchmakerId,
+                        "matchmaker_id" => $authUserId,
                         "sports_type_id" => $sportsTypeId,
                         "field_id" => $fieldId,
                         "started_at" => $startedAt,
@@ -91,9 +92,9 @@
         }
 
         public function update(string $matchId): void {
-            $authUserId = $_REQUEST["auth_user"]->id;
+            $authUserId = Request::getAuthUserId();
 
-            $data = json_decode(file_get_contents("php://input"), true);
+            $postData = Request::getPostData();
             
             try {
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
@@ -108,7 +109,7 @@
 
                 $this->match->update(
                     id: $matchId,
-                    data: $data
+                    data: $postData
                 );
 
                 Response::success(200, "match updated successfully");
@@ -123,7 +124,7 @@
         }
 
         public function delete(string $matchId): void {
-            $authUserId = $_REQUEST["auth_user"]->id;
+            $authUserId = Request::getAuthUserId();
 
             try {
                 $result = $this->match->find(columns: ["matchmaker_id", "match_status"], conditions: ["id" => $matchId]);

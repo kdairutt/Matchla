@@ -1,6 +1,7 @@
 <?php
     namespace Matchla\Controllers;
 
+    use Matchla\Core\Request;
     use Matchla\Core\Response;
     use Matchla\Models\PlayerModel;
     
@@ -45,22 +46,22 @@
         }
 
         public function update(string $playerId): void {
-            $authUserId = $_REQUEST["auth_user"]->id;
+            $authUserId = Request::getAuthUserId();
 
             if((int) $authUserId !== (int) $playerId) {
                 Response::error(403, "forbidden");
             }
 
-            $data = json_decode(file_get_contents("php://input"), true);
+            $postData = Request::getPostData();
 
-            if(empty($data)) {
+            if(empty($postData)) {
                 Response::error();
             }
 
             try {
                 $this->player->update(
                     id: $playerId,
-                    data: $data
+                    data: $postData
                 );
                 Response::success(200, "player updated successfully");
 

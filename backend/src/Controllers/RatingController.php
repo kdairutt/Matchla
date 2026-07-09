@@ -1,6 +1,7 @@
 <?php
     namespace Matchla\Controllers;
 
+    use Matchla\Core\Request;
     use Matchla\Core\Response;
     use Matchla\Models\MatchModel;
     use Matchla\Models\CandidateModel;
@@ -18,32 +19,14 @@
         }
 
         public function rate(string $matchId, string $evaluatedId): void {
-            $authUser = $_REQUEST["auth_user"];
-            // değerleme yapan
-            $evaluatorId = $authUser->id;
+            $authUserId = Request::getAuthUserId();
 
-            try {
-                // maç, değerleme aşamasında mı?
-                $result = $this->match->find(columns: ["match_status"], conditions: ["id" => $matchId]);
-
-                if(!$result) {
-                    Response::error(404, "match not found");
-                }
-
-                if($result["match_status"] !== "evaluation") {
-                    Response::error(message: "match not under evaluation");
-                }
-
-                // değerleme yapan, kendini değerlendirmeye çalışıyor mu?
-                if ((int) $evaluatorId === (int) $evaluatedId) {
-                    Response::error(message: "cannot evaluate the evaluator");
-                }
-
+            try { 
                 // Değerleme yapan ve değerlendirilen, bir katılımcı mı?
                 $evaluatorIsParticipant = $this->candidate->find(
                     columns: ["status"],
                     conditions: [
-                        "player_id" => $evaluatorId,
+                        "player_id" => $authUserId,
                         "match_id" => $matchId,
                         "status" => "accepted"
                     ]);
@@ -60,11 +43,27 @@
                     Response::error(403, "forbidden");
                 }
 
+                // maç, değerleme aşamasında mı?
+                $result = $this->match->find(columns: ["match_status"], conditions: ["id" => $matchId]);
+
+                if(!$result) {
+                    Response::error(404, "match not found");
+                }
+
+                if($result["match_status"] !== "evaluation") {
+                    Response::error(message: "match not under evaluation");
+                }
+
+                // değerleme yapan, kendini değerlendirmeye çalışıyor mu?
+                if ((int) $authUserId === (int) $evaluatedId) {
+                    Response::error(message: "cannot evaluate the evaluator");
+                }
+
                 // zaten değerleme yapılmış mı? (zaten unique key var ama olsun)
                 $alreadyRated = $this->rating->find(
                     columns: ["id"],
                     conditions: [
-                        "evaluator_id" => $evaluatorId, 
+                        "evaluator_id" => $authUserId, 
                         "evaluated_id" => $evaluatedId,
                         "match_id" => $matchId
                     ]);
@@ -73,13 +72,14 @@
                     Response::error(message: "already rated this player");
                 }
                 
-                $skillPoint = json_decode(file_get_contents("php://input"), true)["skill_point"] ?? null;
+                $skillPoint = Request::getPostData()["skill_point"] ?? null;
+                
                 if($skillPoint === null || $skillPoint < 0 || $skillPoint > 100) {
                     Response::error(422, "insufficient skill point");
                 }
                 
                 $ratingData = [
-                    "evaluator_id" => $evaluatorId,
+                    "evaluator_id" => $authUserId,
                     "evaluated_id" => $evaluatedId,
                     "match_id" => $matchId,
                     "skill_point" => $skillPoint
