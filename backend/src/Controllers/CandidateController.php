@@ -1,10 +1,12 @@
 <?php
     namespace Matchla\Controllers;
+
+    use Matchla\Core\Request;
+    use Matchla\Core\Response;
     use Matchla\Services\CandidateService;
     use Matchla\Models\CandidateModel;
     use Matchla\Models\PlayerModel;
     use Matchla\Models\MatchModel;
-    use Matchla\Core\Response;
 
     class CandidateController {
         private CandidateModel $candidate;
@@ -43,8 +45,7 @@
         }
 
         public function apply(string $matchId): void {
-            $authUser = $_REQUEST["auth_user"];
-            $authUserId = $authUser->id;
+            $authUserId = Request::getAuthUserId();
 
             // zaten başvurmuş mu?
             try {
@@ -74,7 +75,7 @@
             }
 
             // ekle
-            $postData = json_decode(file_get_contents("php://input"), true);
+            $postData = Request::getPostData();
             $applicationNote = $postData["application_note"] ?? null;
 
             try {
@@ -99,8 +100,7 @@
         }
 
         public function decide(string $matchId, string $candidateId): void {
-            $authUser = $_REQUEST["auth_user"];
-            $authUserId = $authUser->id;
+            $authUserId = Request::getAuthUserId();
 
             try {
                 // authUser, matchmaker mı?
@@ -127,7 +127,7 @@
                     Response::error(message: "already decided");
                 }
 
-                $postData = json_decode(file_get_contents("php://input"), true);
+                $postData = Request::getPostData();
                 $decision = $postData["decision"] ?? null;
 
                 if(!in_array($decision, ["accept", "reject"])) {
@@ -156,8 +156,7 @@
         }
 
         public function index(string $matchId): void {
-            $authUser = $_REQUEST["auth_user"];
-            $authUserId = $authUser->id;
+            $authUserId = Request::getAuthUserId();
 
             try {
                 // matchmaker mı adayları görüntülemek istiyor?
