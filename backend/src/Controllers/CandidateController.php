@@ -56,7 +56,7 @@
                 }
 
                 $matchStatus = $result["match_status"];
-                
+
                 if($matchStatus !== "open") {
                     Response::error(422, "match not open for applications");
                 }
@@ -121,10 +121,14 @@
             $authUserId = Request::getAuthUserId();
 
             try {
-                // authUser, matchmaker mı?
+                // Maç var mı? Varsa; authUser, matchmaker mı?
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
 
-                if(!$matchmakerId || (int) $matchmakerId !== (int) $authUserId) {
+                if(!$matchmakerId) {
+                    Response::error(404, "match not found");
+                }
+
+                if((int) $matchmakerId !== (int) $authUserId) {
                     Response::error(403, "forbidden");
                 }
 
@@ -159,13 +163,19 @@
                     data: ["status" => $newStatus]
                 );
 
+                if(!$result) {
+                    Response::error(500, "_server error");
+                }
+
                 $json = [
-                    "participant_info" => [
+                    "candidate_info" => [
                             "candidate_id" => $candidateId,
                             "match_id" => $matchId,
-                            "matchmaker_id" => $authUserId
+                            "matchmaker_id" => $authUserId,
+                            "status" => $newStatus
                         ]
                 ];
+                
                 Response::success(200, "decision made successfully", $json);
 
             } catch(\Exception $e) {
@@ -177,8 +187,13 @@
             $authUserId = Request::getAuthUserId();
 
             try {
-                // matchmaker mı adayları görüntülemek istiyor?
+                // Maç var mı? Varsa, matchmaker mı adayları görüntülemek istiyor?
                 $matchmakerId = $this->match->getMatchmakerId($matchId);
+
+                if(!$matchmakerId) {
+                    Response::error(404, "match not found");
+                }
+
                 $isMatchmaker = (int) $matchmakerId === (int) $authUserId;
 
                 // başka bir katılımcı mı adayları görüntülemek istiyor?

@@ -107,10 +107,14 @@
                     Response::error(403, "forbidden");
                 }
 
-                $this->match->update(
+                $result = $this->match->update(
                     id: $matchId,
                     data: $postData
                 );
+
+                if(!$result) {
+                    Response::error(500, "_server error");
+                }
 
                 Response::success(200, "match updated successfully");
 
@@ -145,8 +149,12 @@
                     Response::error(400, "match already cancelled");
                 }
 
-                $this->match->cancel($matchId);
+                $result = $this->match->cancel($matchId);
 
+                if(!$result) {
+                    Response::error(500, "_server error");
+                }
+                
                 $json = ["matchmaker_id" => $matchmakerId];
 
                 Response::success(200, "match deleted successfully", $json);

@@ -59,10 +59,15 @@
             }
 
             try {
-                $this->player->update(
+                $result = $this->player->update(
                     id: $playerId,
                     data: $postData
                 );
+
+                if(!$result) {
+                    Response::error(500, "_server error");
+                }
+
                 Response::success(200, "player updated successfully");
 
             } catch(\Exception $e) {

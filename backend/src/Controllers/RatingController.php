@@ -43,7 +43,7 @@
                     Response::error(403, "forbidden");
                 }
 
-                // maç, değerleme aşamasında mı?
+                // Maç var mı? Varsa, değerleme aşamasında mı?
                 $result = $this->match->find(columns: ["match_status"], conditions: ["id" => $matchId]);
 
                 if(!$result) {
@@ -72,7 +72,8 @@
                     Response::error(message: "already rated this player");
                 }
                 
-                $skillPoint = Request::getPostData()["skill_point"] ?? null;
+                $postData = Request::getPostData();
+                $skillPoint = $postData["skill_point"] ?? null;
                 
                 if($skillPoint === null || $skillPoint < 0 || $skillPoint > 100) {
                     Response::error(422, "insufficient skill point");
@@ -85,7 +86,7 @@
                     "skill_point" => $skillPoint
                 ];
 
-                $this->rating->create($ratingData);
+                $ratingData["rate_id"] = $this->rating->create($ratingData);
 
                 Response::success(201, "player rated successfully", $ratingData);
 
