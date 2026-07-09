@@ -46,6 +46,24 @@
 
         public function apply(string $matchId): void {
             $authUserId = Request::getAuthUserId();
+            
+            // maç var mı? varsa, 'open' statüsünde mi?
+            try {
+                $result = $this->match->find(columns: ["match_status"], conditions: ["id" => $matchId]);
+                
+                if(!$result) {
+                    Response::error(404, "match not found");
+                }
+
+                $matchStatus = $result["match_status"];
+                
+                if($matchStatus !== "open") {
+                    Response::error(422, "match not open for applications");
+                }
+
+            } catch(\Exception $e) {
+                Response::serverError($e->getMessage());
+            }
 
             // zaten başvurmuş mu?
             try {
