@@ -13,15 +13,16 @@ Matchla, spor yapmak isteyen bireylerin ekip bulma, güvenilir partner bulma ve 
 ```
 backend/
   src/
-    Controllers/    → HTTP isteklerini karşılar, yanıt döner
-    Models/         → Veritabanı işlemleri
-    Middleware/     → Kimlik doğrulama, yetkilendirme
-    Services/       → İş mantığı (puanlama algoritması, takım dengeleme)
-    Helpers/        → Yardımcı fonksiyonlar
-  config/           → Veritabanı ve uygulama ayarları
-  routes/           → API endpoint tanımları
-  public/           → Giriş noktası (index.php)
-  .env.example      → Gerekli environment değişkenleri
+    Controllers/
+    Core/
+    Models/
+    Middleware/
+    Services/
+    Helpers/
+  config/
+  routes/
+  public/
+  .env.example
 ```
 
 ## Kurulum
@@ -81,28 +82,21 @@ php -S localhost:8000
 | POST | `/api/matches/{matchId}/players/{playerId}` | Oyuncuyu değerle |
 
 
-- **Router** — Gelen isteği method ve URI'a göre ilgili controller'a yönlendirir. Statik ve dinamik route'ları destekler.
-- **Middleware** — JWT doğrulama, yetkilendirme ve rate limiting işlemlerini yürütür.
-- **Controller** — İsteği alır, Service'i çağırır, yanıtı döner. İş mantığı içermez.
-- **Service** — Puanlama algoritması, takım dengeleme, aday önerme gibi iş mantığını yürütür.
-- **Model** — Veritabanı sorguları ve veri erişim katmanı.
+## Özellikler
 
-## Özellikler (Geliştirme Aşamasında)
-
+### Implement Edildi:
 - [x] Router (statik + dinamik route desteği)
 - [x] Authentication (JWT)
 - [x] Oyuncu profili
 - [x] Maç yönetimi ve yaşam döngüsü
 - [x] Aday/Katılımcı sistemi
-- [ ] Puanlama algoritması
+- [x] Puanlama algoritması
+
+## Implement Edilecek:
 - [ ] Takım dengeleme algoritması
 - [ ] Aday önerme algoritması
 
-## Yapılacaklar (Öncelik Sıralı)
-- **Models** - Data transaction'ları için Modeller. Yüksek öncelik.
-- **Helpers** - Kalıplaşmış response ifadeleri, request verilerinin yüklenmesi ve benzeri.
 ## Hakkında
-
-Bu proje, YBS370 — Sistem Analizi ve Tasarımı dersi kapsamında hazırlanan [Matchla SRS belgesi](docs/SRS.pdf) temel alınarak geliştirilmektedir.
+Bu proje, YBS370 — Sistem Analizi ve Tasarımı dersi kapsamında hazırlanan Matchla SRS belgesi temel alınarak geliştirilmektedir.
 
 **Geliştirici:** Abdülkadir İpek
